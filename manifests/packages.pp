@@ -4,5 +4,15 @@
 #
 # @example
 #   include puppet_kubeedge::package
-class kubeedge::packages {
+
+class kubeedge::packages (
+    String $source = $kubeedge::repos::source,
+    String $pkg_name = $kubeedge::repos::pkg_name
+){
+    package {
+        "keadm":
+          ensure => installed,
+          source => "/tmp/${pkg_name}.deb",
+          require => File["/tmp/${pkg_name}.deb"],
+    }    
 }

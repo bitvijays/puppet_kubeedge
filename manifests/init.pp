@@ -70,16 +70,19 @@ class kubeedge (
     default: { $node_name = pick($node_label, fact('networking.hostname')) }
   }
 
+
   if $controller {
     if $worker {
       fail(translate('A node can not be both a controller and a node'))
     }
   }
 
+
+
   # Not sure if should allow this to be changed
   $config_file = '/etc/kubernetes/config.yaml'
 
-
+  # Added !cloudcore_path_exists to avoid reinstalling the cloudcore if cloudcore is already present.
   if $controller {
     include kubeedge::repos
     include kubeedge::packages

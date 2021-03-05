@@ -18,8 +18,9 @@ define kubeedge::keadm_init (
       kube-config             => $kubeedge::kube_config
   })
 
-  $exec_init = "/tmp/${keadm_path}/keadm/keadm init ${keadm_init_flags}"
-  $only_init = "kubectl get nodes | grep ${node_name}"
+  $exec_init = "keadm init ${keadm_init_flags}"
+  $only_init = "kubectl get nodes --kubeconfig=${kubeedge::kube_config} | grep ${node_name}"
+  $only_init2= 'cloudcore --version | grep "command not found"'
 
   notify { 'resource title':
     message  => $keadm_init_flags
@@ -31,6 +32,26 @@ define kubeedge::keadm_init (
     path        => $path,
     logoutput   => true,
     timeout     => 0,
-#    onlyif      => $only_init,
+    unless      => $only_init,
+    onlyif      => $only_init2
+  }
+
+  $exec_gettoken = "keadm gettoken --kube-config=${kubeedge::kube_config}"
+  $only_gettoken = 'pgrep cloudcore'
+
+  exec { 'keadm gettoken':
+    command     => $exec_gettoken,
+    environment => $env,
+    creates     => "/etc/kubeedge/token",
+    path        => $path,
+    logoutput   => true,
+    timeout     => 0,
+    onlyif      => $only_gettoken,
+    notify => File['/etc/kubeedge/token'],
+  }
+
+  file { '/etc/kubeedge/token':
+    content      => 'token',
+    require => Exec['keadm gettoken'],
   }
 }
