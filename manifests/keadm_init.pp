@@ -18,14 +18,14 @@ define kubeedge::keadm_init (
       kube-config             => $kubeedge::kube_config
   })
 
+  # exec_init is used to initialise the Cloudcore 
   $exec_init = "keadm init ${keadm_init_flags}"
+  # The exec is only executed if the Kubernetes is ready 
   $only_init = "kubectl get nodes --kubeconfig=${kubeedge::kube_config} | grep ${node_name}"
+  # The exec should only run if cloudcore is not installed.
   $only_init2= 'cloudcore --version | grep "command not found"'
 
-  notify { 'resource title':
-    message  => $keadm_init_flags
-  }
-
+  # Exec for Installing Cloudcore
   exec { 'keadm init':
     command     => $exec_init,
     environment => $env,
@@ -36,22 +36,24 @@ define kubeedge::keadm_init (
     onlyif      => $only_init2
   }
 
+  # We also need to get the token for joining the nodes
   $exec_gettoken = "keadm gettoken --kube-config=${kubeedge::kube_config}"
   $only_gettoken = 'pgrep cloudcore'
 
   exec { 'keadm gettoken':
     command     => $exec_gettoken,
     environment => $env,
-    creates     => "/etc/kubeedge/token",
+    creates     => '/etc/kubeedge/token',
     path        => $path,
     logoutput   => true,
     timeout     => 0,
     onlyif      => $only_gettoken,
-    notify => File['/etc/kubeedge/token'],
+    notify      => File['/etc/kubeedge/token'],
   }
 
+  # By default, keadm gettoken is only printed once.
   file { '/etc/kubeedge/token':
-    content      => 'token',
+    content => 'token',
     require => Exec['keadm gettoken'],
   }
 }

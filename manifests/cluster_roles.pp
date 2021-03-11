@@ -23,6 +23,7 @@ class kubeedge::cluster_roles (
     $cri_socket = undef
   }
 
+  # Call the keadm_init keadm_init.pp file
   if $controller {
     kubeedge::keadm_init { $node_name:
       ignore_preflight_errors => $preflight_errors,
@@ -30,12 +31,10 @@ class kubeedge::cluster_roles (
     }
   }
 
+  # Call the keadm_init keadm_join.pp file
   if $worker {
-    kubeedge::kubeadm_join { $node_name:
-      cri_socket              => $cri_socket,
-      ignore_preflight_errors => $preflight_errors,
-      discovery_file          => $join_discovery_file,
-      env                     => $env,
+    kubeedge::keadm_join { $node_name:
+      token                   => $kubeedge::token,
     }
   }
 }

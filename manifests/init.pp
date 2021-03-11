@@ -46,11 +46,11 @@ class kubeedge (
   Array[String] $default_path                                    = ['/usr/bin', '/usr/sbin', '/bin', '/sbin', '/usr/local/bin'],
   Optional[String] $node_label                                   = undef,
   Optional[String] $advertise_address                            = undef,
-  Optional[String] $kube_config                                   = '/home/debian/.kube/config',
-  # String $token                                                  = undef,
-  # String $discovery_token_hash                                   = undef,
-  # Optional[String] $node_label                                   = undef,
+  Optional[String] $kube_config                                  = '/home/debian/.kube/config',
+  Optional[String] $token                                        = undef,
+  Optional[String] $cloudcore_ipport                             = undef,
   Optional[String] $cloud_provider                               = undef,
+
 ) {
 
   if !$facts['os']['family'] in ['Debian', 'RedHat'] {
@@ -78,45 +78,29 @@ class kubeedge (
   }
 
 
-
-  # Not sure if should allow this to be changed
-  $config_file = '/etc/kubernetes/config.yaml'
-
-  # Added !cloudcore_path_exists to avoid reinstalling the cloudcore if cloudcore is already present.
   if $controller {
     include kubeedge::repos
     include kubeedge::packages
-    # include kubernetes::config::kubeadm
-    # include kubernetes::service
+    include kubeedge::service
     include kubeedge::cluster_roles
-    # include kubernetes::kube_addons
-    contain kubeedge::repos
-    contain kubeedge::packages
-    # contain kubernetes::config::kubeadm
-    # contain kubernetes::service
-    contain kubeedge::cluster_roles
-    # contain kubernetes::kube_addons
 
     Class['kubeedge::repos']
       -> Class['kubeedge::packages']
-    # -> Class['kubernetes::config::kubeadm']
-    # -> Class['kubernetes::service']
+      -> Class['kubeedge::service']
       -> Class['kubeedge::cluster_roles']
-    # -> Class['kubernetes::kube_addons']
   }
 
   if $worker {
-    contain kubeedge::repos
-    contain kubeedge::packages
-    contain kubernetes::config::worker
-    Class['kubernetes::config::worker'] -> Class['kubernetes::service']
+    include kubeedge::repos
+    include kubeedge::packages
+    include kubeedge::cluster_roles
+    contain kubeedge::cluster_roles
+    contain kubeedge::service
 
-    contain kubernetes::service
-    contain kubernetes::cluster_roles
 
-    Class['kubernetes::repos']
-    -> Class['kubernetes::packages']
-    -> Class['kubernetes::service']
-    -> Class['kubernetes::cluster_roles']
+    Class['kubeedge::repos']
+    -> Class['kubeedge::packages']
+    -> Class['kubeedge::cluster_roles']
+    -> Class['kubeedge::service']
   }
 }
